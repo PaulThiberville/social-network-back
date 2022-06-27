@@ -12,6 +12,7 @@ exports.register = async (req, res) => {
       imageUrl: "default",
       bio: "Hey !",
       role: "Basic",
+      friends: [],
     });
     await user.save();
     return res.status(201).json("User succesfully created !");
@@ -27,9 +28,13 @@ exports.login = async (req, res) => {
     if (await bcrypt.compare(req.body.password, user.password)) {
       return res.status(200).json({
         userId: user._id,
-        token: jwt.sign({ userId: user._id }, process.env.TOKEN_SECRET, {
-          expiresIn: "24h",
-        }),
+        token: jwt.sign(
+          { userId: user._id, role: user.role },
+          process.env.TOKEN_SECRET,
+          {
+            expiresIn: "24h",
+          }
+        ),
       });
     }
     return res.status(400).json("Invalid Password");

@@ -2,10 +2,12 @@ const Comment = require("../models/comment");
 
 exports.create = async (req, res) => {
   try {
+    const userId = req.auth.userId;
     const comment = new Comment({
       text: req.body.text,
-      post: req.body.postId,
-      author: req.body.userId,
+      post: req.params.id,
+      author: userId,
+      likes: [],
     });
     await comment.save();
     return res.status(201).json(comment);
@@ -17,7 +19,7 @@ exports.create = async (req, res) => {
 exports.readAll = async (req, res) => {
   try {
     Comment.find({ post: req.params.id })
-      .populate("author")
+      .populate({ path: "author", select: "userName imageUrl" })
       .exec(function (error, docs) {
         return res.status(200).json(docs);
       });
@@ -29,7 +31,7 @@ exports.readAll = async (req, res) => {
 exports.readOne = async (req, res) => {
   try {
     Comment.findOne({ _id: req.params.id })
-      .populate("author")
+      .populate({ path: "author", select: "userName imageUrl" })
       .exec(function (error, docs) {
         return res.status(200).json(docs);
       });
@@ -50,6 +52,7 @@ exports.update = async (req, res) => {
         text: comment.text,
         post: comment.post,
         author: comment.author,
+        likes: comment.likes,
       }
     );
     return res.status(201).json(comment);

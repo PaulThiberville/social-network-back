@@ -2,10 +2,12 @@ const Post = require("../models/post");
 
 exports.create = async (req, res) => {
   try {
+    const userId = req.auth.userId;
     const post = new Post({
       text: req.body.text,
       imageUrl: req.body.imageUrl,
-      author: req.body.userId,
+      author: userId,
+      likes: [],
     });
     await post.save();
     return res.status(201).json(post);
@@ -17,7 +19,7 @@ exports.create = async (req, res) => {
 exports.readAll = async (req, res) => {
   try {
     Post.find({})
-      .populate("author")
+      .populate({ path: "author", select: "userName imageUrl" })
       .exec(function (error, docs) {
         return res.status(200).json(docs);
       });
@@ -29,7 +31,7 @@ exports.readAll = async (req, res) => {
 exports.readOne = async (req, res) => {
   try {
     Post.findOne({ _id: req.params.id })
-      .populate("author")
+      .populate({ path: "author", select: "userName imageUrl" })
       .exec(function (error, docs) {
         return res.status(200).json(docs);
       });
@@ -51,10 +53,11 @@ exports.update = async (req, res) => {
         text: post.text,
         imageUrl: post.imageUrl,
         author: post.author,
+        likes: post.likes,
       }
     );
     return res.status(201).json(post);
-  } catch (error) {
+  } catch {
     return res.status(500).json("Failed to update post");
   }
 };
@@ -64,7 +67,54 @@ exports.delete = async (req, res) => {
     await Post.deleteOne({ _id: req.params.id });
     //TODO: delete all related comments
     return res.status(200).json("Post deleted");
-  } catch (error) {
+  } catch {
     return res.status(500).json("Failed to delete post");
+  }
+};
+
+exports.like = async (req, res) => {
+  try {
+    const userId = req.auth.userId;
+    const post = await Post.findOne({ _id: req.params.id });
+    if (!post.likes.includes(userId)) {
+      post.likes.push(userId);
+      await Post.updateOne(
+        { _id: post._id },
+        {
+          _id: post._id,
+          text: post.text,
+          imageUrl: post.imageUrl,
+          author: post.author,
+          likes: post.likes,
+        }
+      );
+    }
+    return res.status(200).json(post);
+  } catch {
+    return res.status(500).json("Failed to like post");
+  }
+};
+
+exports.unlike = async (req, res) => {
+  try {
+    const userId = req.auth.userId;
+    const post = await Post.findOne({ _id: req.params.id });
+    if (post.likes.includes(userId)) {
+      const newLikes = post.likes.filter((id) => id != userId);
+      post.likes = newLikes;
+      await Post.updateOne(
+        { _id: post._id },
+        {
+          _id: post._id,
+          text: post.text,
+          imageUrl: post.imageUrl,
+          author: post.author,
+          likes: post.likes,
+        }
+      );
+    }
+    return res.status(200).json(post);
+  } catch {
+    return res.status(500).json("Failed to unlike post");
   }
 };

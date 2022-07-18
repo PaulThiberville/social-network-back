@@ -7,36 +7,80 @@ exports.create = async (req, res) => {
       text: req.body.text,
       imageUrl: req.body.imageUrl,
       author: userId,
+      comments: [],
       likes: [],
     });
     await post.save();
+    await post.populate({ path: "author", select: "userName imageUrl" });
     return res.status(201).json(post);
-  } catch {
-    return res.status(500).json("Failed to create post");
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
 exports.readAll = async (req, res) => {
   try {
     Post.find({})
-      .populate({ path: "author", select: "userName imageUrl" })
+      .populate([
+        { path: "author", select: "userName imageUrl" },
+        {
+          path: "comments",
+          select: "text author likes",
+          populate: {
+            path: "author",
+            select: "userName imageUrl",
+          },
+        },
+      ])
       .exec(function (error, docs) {
         return res.status(200).json(docs);
       });
-  } catch {
-    return res.status(500).json("Failed to load posts");
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.readAllByUser = async (req, res) => {
+  try {
+    Post.find({ author: req.params.id })
+      .populate([
+        { path: "author", select: "userName imageUrl" },
+        {
+          path: "comments",
+          select: "text author likes",
+          populate: {
+            path: "author",
+            select: "userName imageUrl",
+          },
+        },
+      ])
+      .exec(function (error, docs) {
+        return res.status(200).json(docs);
+      });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
 exports.readOne = async (req, res) => {
   try {
     Post.findOne({ _id: req.params.id })
-      .populate({ path: "author", select: "userName imageUrl" })
+      .populate([
+        { path: "author", select: "userName imageUrl" },
+        {
+          path: "comments",
+          select: "text author likes",
+          populate: {
+            path: "author",
+            select: "userName imageUrl",
+          },
+        },
+      ])
       .exec(function (error, docs) {
         return res.status(200).json(docs);
       });
-  } catch {
-    return res.status(500).json("Failed to load post");
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -57,8 +101,8 @@ exports.update = async (req, res) => {
       }
     );
     return res.status(201).json(post);
-  } catch {
-    return res.status(500).json("Failed to update post");
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -66,9 +110,9 @@ exports.delete = async (req, res) => {
   try {
     await Post.deleteOne({ _id: req.params.id });
     //TODO: delete all related comments
-    return res.status(200).json("Post deleted");
-  } catch {
-    return res.status(500).json("Failed to delete post");
+    return res.status(200).json({ _id: req.params.id });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -88,10 +132,11 @@ exports.like = async (req, res) => {
           likes: post.likes,
         }
       );
+      await post.populate({ path: "author", select: "userName imageUrl" });
     }
     return res.status(200).json(post);
-  } catch {
-    return res.status(500).json("Failed to like post");
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -112,9 +157,10 @@ exports.unlike = async (req, res) => {
           likes: post.likes,
         }
       );
+      await post.populate({ path: "author", select: "userName imageUrl" });
     }
     return res.status(200).json(post);
-  } catch {
-    return res.status(500).json("Failed to unlike post");
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };

@@ -7,9 +7,9 @@ const accesComment = require("../middlewares/accesComment");
 const commentCtrl = require("../controllers/comment");
 
 router.post("/:id", auth, commentCtrl.create);
-router.get("/post/:id", auth, commentCtrl.readAll);
-router.get("/:id", auth, commentCtrl.readOne);
 router.put("/:id", auth, setComment, accesComment, commentCtrl.update);
 router.delete("/:id", auth, setComment, accesComment, commentCtrl.delete);
+router.post("/like/:id", auth, commentCtrl.like);
+router.post("/unlike/:id", auth, commentCtrl.unlike);
 
 module.exports = router;

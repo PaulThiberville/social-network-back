@@ -8,6 +8,7 @@ const postCtrl = require("../controllers/post");
 
 router.post("/", auth, postCtrl.create);
 router.get("/", auth, postCtrl.readAll);
+router.get("/user/:id", auth, postCtrl.readAllByUser);
 router.get("/:id", auth, postCtrl.readOne);
 router.put("/:id", auth, setPost, accesPost, postCtrl.update);
 router.delete("/:id", auth, setPost, accesPost, postCtrl.delete);

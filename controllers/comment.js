@@ -1,4 +1,5 @@
 const Comment = require("../models/comment");
+const Post = require("../models/post");
 
 exports.create = async (req, res) => {
   try {
@@ -10,33 +11,13 @@ exports.create = async (req, res) => {
       likes: [],
     });
     await comment.save();
+    const post = await Post.findById(comment.post);
+    post.comments.push(comment._id);
+    await post.update(post);
+    await comment.populate({ path: "author", select: "userName imageUrl" });
     return res.status(201).json(comment);
-  } catch {
-    return res.status(500).json("Failed to create comment");
-  }
-};
-
-exports.readAll = async (req, res) => {
-  try {
-    Comment.find({ post: req.params.id })
-      .populate({ path: "author", select: "userName imageUrl" })
-      .exec(function (error, docs) {
-        return res.status(200).json(docs);
-      });
-  } catch {
-    return res.status(500).json("Failed to load comments");
-  }
-};
-
-exports.readOne = async (req, res) => {
-  try {
-    Comment.findOne({ _id: req.params.id })
-      .populate({ path: "author", select: "userName imageUrl" })
-      .exec(function (error, docs) {
-        return res.status(200).json(docs);
-      });
-  } catch {
-    return res.status(500).json("Failed to load comment");
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -57,15 +38,63 @@ exports.update = async (req, res) => {
     );
     return res.status(201).json(comment);
   } catch (error) {
-    return res.status(500).json("Failed to update comment");
+    return res.status(500).json({ error: error.message });
   }
 };
 
 exports.delete = async (req, res) => {
   try {
+    const comment = await Comment.findOne({ _id: req.params.id });
     await Comment.deleteOne({ _id: req.params.id });
-    return res.status(200).json("Comment deleted");
+    return res.status(200).json({ _id: req.params.id, post: comment.post });
   } catch (error) {
-    return res.status(500).json("Failed to delete comment");
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.like = async (req, res) => {
+  try {
+    const userId = req.auth.userId;
+    const comment = await Comment.findOne({ _id: req.params.id });
+    if (!comment.likes.includes(userId)) {
+      comment.likes = [...comment.likes, userId];
+      await Comment.updateOne(
+        { _id: req.params.id },
+        {
+          _id: comment._id,
+          text: comment.text,
+          author: comment.author,
+          likes: comment.likes,
+        }
+      );
+      await comment.populate({ path: "author", select: "userName imageUrl" });
+    }
+    return res.status(200).json(comment);
+  } catch {
+    return res.status(500).json("Failed to like comment");
+  }
+};
+
+exports.unlike = async (req, res) => {
+  try {
+    const userId = req.auth.userId;
+    const comment = await Comment.findOne({ _id: req.params.id });
+    if (comment.likes.includes(userId)) {
+      const newLikes = comment.likes.filter((id) => id != userId);
+      comment.likes = newLikes;
+      await Comment.updateOne(
+        { _id: comment._id },
+        {
+          _id: comment._id,
+          text: comment.text,
+          author: comment.author,
+          likes: comment.likes,
+        }
+      );
+      await comment.populate({ path: "author", select: "userName imageUrl" });
+    }
+    return res.status(200).json(comment);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };

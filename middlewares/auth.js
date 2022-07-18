@@ -12,7 +12,7 @@ module.exports = (req, res, next) => {
     const role = decodedToken.role;
     req.auth = { userId, role };
     next();
-  } catch {
-    res.status(401).json("You are not Authenticated");
+  } catch (error) {
+    return res.status(401).json({ error: error.message });
   }
 };

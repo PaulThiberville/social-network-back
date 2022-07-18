@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const post = require("../models/post");
 
 exports.register = async (req, res) => {
   try {
@@ -16,8 +17,8 @@ exports.register = async (req, res) => {
     });
     await user.save();
     return res.status(201).json("User succesfully created !");
-  } catch {
-    return res.status(500).json("Failed to register user");
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -38,8 +39,24 @@ exports.login = async (req, res) => {
       });
     }
     return res.status(400).json("Invalid Password");
-  } catch {
-    res.status(500);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.GetOne = async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.params.id });
+    if (!user) return res.status(404).json("User not found");
+    return res.status(200).json({
+      _id: user._id,
+      userName: user.userName,
+      imageUrl: user.imageUrl,
+      bio: user.bio,
+      friends: user.friends,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 

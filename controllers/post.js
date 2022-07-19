@@ -1,3 +1,4 @@
+const Comment = require("../models/comment");
 const Post = require("../models/post");
 
 exports.create = async (req, res) => {
@@ -108,8 +109,8 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
+    await Comment.deleteMany({ post: req.params.id });
     await Post.deleteOne({ _id: req.params.id });
-    //TODO: delete all related comments
     return res.status(200).json({ _id: req.params.id });
   } catch (error) {
     return res.status(500).json({ error: error.message });

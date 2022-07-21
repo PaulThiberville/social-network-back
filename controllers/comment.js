@@ -24,7 +24,7 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const comment = await Comment.findOne({ _id: req.params.id });
-    if (!comment) return res.status(404).json("Comment not found");
+    if (!comment) return res.status(404).json({ error: "Comment not found" });
     comment.text = req.body.text;
     await Comment.updateOne(
       { _id: req.params.id },
@@ -71,7 +71,7 @@ exports.like = async (req, res) => {
     }
     return res.status(200).json(comment);
   } catch {
-    return res.status(500).json("Failed to like comment");
+    return res.status(500).json({ error: "Failed to like comment" });
   }
 };
 

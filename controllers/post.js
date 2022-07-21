@@ -88,7 +88,7 @@ exports.readOne = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const post = await Post.findOne({ _id: req.params.id });
-    if (!post) return res.status(404).json("Post not found");
+    if (!post) return res.status(404).json({ error: "Post not found" });
     post.text = req.body.text;
     post.imageUrl = req.body.imageUrl;
     await Post.updateOne(
